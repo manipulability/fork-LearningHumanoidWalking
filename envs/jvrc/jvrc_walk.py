@@ -44,6 +44,7 @@ class JvrcWalkEnv(mujoco_env.MujocoEnv):
                                              root_body='PELVIS_S',
                                              lfoot_body='L_ANKLE_P_S',
                                              rfoot_body='R_ANKLE_P_S',
+                                             head_body='NECK_P_S',
         )
         # set goal height
         self.task._goal_height_ref = 0.80
@@ -54,6 +55,7 @@ class JvrcWalkEnv(mujoco_env.MujocoEnv):
         self.task.reset()
 
         self.robot = robot.JVRC(pdgains.T, control_dt, self.actuators, self.interface)
+        self.task._neutral_pose=self.robot.nominal_pose
 
         # define indices for action and obs mirror fns
         base_mir_obs = [0.1, -1, 2, -3,              # root orient
@@ -63,7 +65,7 @@ class JvrcWalkEnv(mujoco_env.MujocoEnv):
                         25, -26, -27, 28, -29, 30,   # motor vel [1]
                         19, -20, -21, 22, -23, 24,   # motor vel [2]
         ]
-        append_obs = [(len(base_mir_obs)+i) for i in range(3)]
+        append_obs = [(len(base_mir_obs)+i) for i in range(6)]
         self.robot.clock_inds = append_obs[0:2]
         self.robot.mirrored_obs = np.array(base_mir_obs + append_obs, copy=True).tolist()
         self.robot.mirrored_acts = [6, -7, -8, 9, -10, 11,
@@ -75,7 +77,7 @@ class JvrcWalkEnv(mujoco_env.MujocoEnv):
         self.action_space = np.zeros(action_space_size)
 
         # set observation space
-        self.base_obs_len = 34
+        self.base_obs_len = 37
         self.observation_space = np.zeros(self.base_obs_len)
         
         self.reset_model()
@@ -84,7 +86,7 @@ class JvrcWalkEnv(mujoco_env.MujocoEnv):
         # external state
         clock = [np.sin(2 * np.pi * self.task._phase / self.task._period),
                  np.cos(2 * np.pi * self.task._phase / self.task._period)]
-        ext_state = np.concatenate((clock, [self.task._goal_speed_ref]))
+        ext_state = np.concatenate((clock, self.task.mode.encode(), [self.task.mode_ref]))
 
         # internal state
         qpos = np.copy(self.interface.get_qpos())

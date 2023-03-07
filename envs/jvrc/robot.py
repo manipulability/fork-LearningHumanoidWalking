@@ -41,10 +41,10 @@ class JVRC:
         self.num_joints = len(half_sitting_pose)
         
         # define init qpos and qvel
-        nominal_pose = [q*np.pi/180.0 for q in half_sitting_pose]
-        robot_pose = base_position + base_orientation + nominal_pose
+        self.nominal_pose = [q*np.pi/180.0 for q in half_sitting_pose]
+        robot_pose = base_position + base_orientation + self.nominal_pose
         assert len(robot_pose)==self.client.nq()
-        self.init_qpos_[-len(robot_pose):] = base_position + base_orientation + nominal_pose
+        self.init_qpos_[-len(robot_pose):] = base_position + base_orientation + self.nominal_pose
 
         # define actuated joint nominal pose
         motor_qposadr = self.client.get_motor_qposadr()
